@@ -12,6 +12,6 @@ you dont need to care about them. We have
 versions for:
  - macos arm/intel
  - windows arm/intel
- - linux arm/intel
+ - linux intel
  - android all arches
 
