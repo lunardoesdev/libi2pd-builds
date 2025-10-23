@@ -69,6 +69,10 @@ endif()
 include_directories(${LIBI2PD_SRC_DIR})
 FILE(GLOB LIBI2PD_SRC ${LIBI2PD_SRC_DIR}/*.cpp)
 add_library(libi2pd STATIC ${LIBI2PD_SRC})
+
+if(WIN32)
+  list(APPEND MINGW_EXTRA "wsock32" "ws2_32" "iphlpapi")
+endif()
 target_link_libraries(libi2pd Boost::asio Boost::filesystem Boost::property_tree Boost::container Boost::program_options crypto ssl ${MINIUPNPC_LIBRARY} ZLIB::ZLIB Threads::Threads ${MINGW_EXTRA} ${DL_LIB} ${CMAKE_REQUIRED_LIBRARIES})
 
 set_target_properties(libi2pd PROPERTIES PREFIX "")
@@ -363,7 +367,7 @@ if(WITH_BINARY)
   endif()
 
   if(WIN32)
-    list(APPEND MINGW_EXTRA "wsock32" "ws2_32" "iphlpapi")
+    
     # OpenSSL may require Crypt32 library on MSVC build, which is not added by CMake lesser than 3.21
     if(MSVC AND ${CMAKE_VERSION} VERSION_LESS 3.21)
       list(APPEND MINGW_EXTRA "crypt32")
