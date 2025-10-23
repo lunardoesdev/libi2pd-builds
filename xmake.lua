@@ -20,5 +20,5 @@ includes("@builtin/xpack")
 
 xpack("i2pdwrap-" .. os.host() .. "-" .. os.arch())
     set_formats("targz")
-    add_targets("i2pdwrap")
+    add_targets("feel-free-to-remove-me")
 
