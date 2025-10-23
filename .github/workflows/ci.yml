@@ -63,11 +63,11 @@ jobs:
             rust_package: mingw-w64-x86_64-rust
             xmake_package: mingw-w64-x86_64-xmake
             toolchain_package: mingw-w64-x86_64-toolchain
-          - arch: arm64
-            runner: windows-11-arm
-            rust_package: mingw-w64-clang-aarch64-rust
-            xmake_package: mingw-w64-clang-aarch64-xmake
-            toolchain_package: mingw-w64-clang-aarch64-toolchain
+          # - arch: arm64
+          #   runner: windows-11-arm
+          #   rust_package: mingw-w64-clang-aarch64-rust
+          #   xmake_package: mingw-w64-clang-aarch64-xmake
+          #   toolchain_package: mingw-w64-clang-aarch64-toolchain
     steps:
       - uses: actions/checkout@v4
 
