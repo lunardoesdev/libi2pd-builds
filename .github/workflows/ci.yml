@@ -60,33 +60,28 @@ jobs:
         include:
           - arch: x86_64
             runner: windows-latest
-            rust-target: x86_64-pc-windows-gnu
+            rust_package: mingw-w64-x86_64-rust
+            xmake_package: mingw-w64-x86_64-xmake
+            toolchain_package: mingw-w64-x86_64-toolchain
           - arch: arm64
             runner: windows-11-arm
-            rust-target: aarch64-pc-windows-gnu
+            rust_package: mingw-w64-clang-aarch64-rust
+            xmake_package: mingw-w64-clang-aarch64-xmake
+            toolchain_package: mingw-w64-clang-aarch64-toolchain
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          # Install required development tools
+          # Install required development tools including Rust and xmake
           install: |
             base-devel
             cmake
-            mingw-w64-x86_64-toolchain
-            mingw-w64-ucrt-x86_64-toolchain
             git
-
-      - name: Set up Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          targets: ${{ matrix.rust-target }}
-
-      - name: Set up xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
+            ${{ matrix.toolchain_package }}
+            ${{ matrix.rust_package }}
+            ${{ matrix.xmake_package }}
 
       - name: Build and pack for Windows with MSYS2
         shell: msys2 {0}
