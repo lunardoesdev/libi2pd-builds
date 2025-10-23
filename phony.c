@@ -1,5 +1,5 @@
 #include <i2pdwrap.h>
 
-int main2() {
+int main() {
     C_StartI2P ();
     return 0;}
