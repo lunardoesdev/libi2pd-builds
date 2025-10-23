@@ -11,8 +11,8 @@ package_end()
 
 add_requires("i2pdwrap")
 
-target("i2pdwrap")
-    set_kind("shared")
+target("feel-free-to-remove-me")
+    -- set_kind("shared")
     add_files("phony.c")
     add_packages("i2pdwrap")
 
