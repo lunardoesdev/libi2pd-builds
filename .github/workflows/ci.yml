@@ -50,9 +50,9 @@ jobs:
 
       - name: Build and pack for Linux
         run: |
-          xmake f -p linux -a ${{ matrix.arch }}
-          xmake
-          xmake pack
+          xmake f -p linux -a ${{ matrix.arch }} -vyD
+          xmake -vyD
+          xmake pack -vyD
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
@@ -86,9 +86,9 @@ jobs:
 
       - name: Build and pack for Windows
         run: |
-          xmake f -p mingw -a ${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}
-          xmake
-          xmake pack
+          xmake f -p mingw -a ${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }} -vyD
+          xmake -vyD
+          xmake pack -vyD
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -121,9 +121,9 @@ jobs:
 
       - name: Build and pack for macOS
         run: |
-          xmake f -p macosx -a ${{ matrix.arch }}
-          xmake
-          xmake pack
+          xmake f -p macosx -a ${{ matrix.arch }} -vyD
+          xmake -vyD
+          xmake pack -vyD
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
@@ -155,8 +155,8 @@ jobs:
           run: |
             . "$HOME/.cargo/env"
             xmake f -p freebsd -a $TARGET_ARCH
-            xmake
-            xmake pack
+            xmake -vyD
+            xmake pack -vyD
 
       - name: Upload FreeBSD artifact
         uses: actions/upload-artifact@v4
@@ -212,14 +212,14 @@ jobs:
           # Map Android ABI names to xmake architecture names
           XMAKE_ARCH=""
           case "${{ matrix.arch }}" in
-            "arm64-v8a") XMAKE_ARCH="arm64" ;;
-            "armeabi-v7a") XMAKE_ARCH="armv7" ;;
+            "arm64-v8a") XMAKE_ARCH="arm64-v8a" ;;
+            "armeabi-v7a") XMAKE_ARCH="armeabi-v7a" ;;
             "x86_64") XMAKE_ARCH="x86_64" ;;
-            "x86") XMAKE_ARCH="i386" ;;
+            "x86") XMAKE_ARCH="i686" ;;
           esac
-          xmake f -p android -a $XMAKE_ARCH
-          xmake
-          xmake pack
+          xmake f -p android -a $XMAKE_ARCH -vyD
+          xmake -vyD
+          xmake pack -vyD
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
