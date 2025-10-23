@@ -1,0 +1,244 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # Build for Linux (Intel and ARM)
+  linux:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        arch: [x86_64, aarch64]
+        include:
+          - os: ubuntu-22.04
+            arch: x86_64
+            runner-arch: x64
+          - os: ubuntu-22.04
+            arch: aarch64
+            runner-arch: ARM64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU (for ARM cross-compilation)
+        if: matrix.arch == 'aarch64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          targets: ${{ matrix.arch }}-unknown-linux-gnu
+
+      - name: Set up xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Build and pack for Linux
+        run: |
+          xmake f -p linux -a ${{ matrix.arch }}
+          xmake
+          xmake pack
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: build/xpack/**/*
+
+  # Build for Windows (Intel and ARM)
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake via Chocolatey
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+        shell: pwsh
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          targets: ${{ matrix.arch == 'x86_64' && 'x86_64-pc-windows-gnu' || 'aarch64-pc-windows-gnu' }}
+
+      - name: Set up xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Build and pack for Windows
+        run: |
+          xmake f -p mingw -a ${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}
+          xmake
+          xmake pack
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: build/xpack/**/*
+
+  # Build for macOS (Intel and ARM)
+  macos:
+    runs-on: macos-13
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake via Homebrew
+        run: |
+          brew install cmake
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          targets: ${{ matrix.arch == 'x86_64' && 'x86_64-apple-darwin' || 'aarch64-apple-darwin' }}
+
+      - name: Set up xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Build and pack for macOS
+        run: |
+          xmake f -p macosx -a ${{ matrix.arch }}
+          xmake
+          xmake pack
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: build/xpack/**/*
+
+  # Build for FreeBSD (Intel and ARM via VM)
+  freebsd:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build on FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          mem: 4096
+          envs: 'TARGET_ARCH=${{ matrix.arch }}'
+          prepare: |
+            pkg install -y cmake git
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            . "$HOME/.cargo/env"
+            rustup target add $([ "$TARGET_ARCH" = "x86_64" ] && echo "x86_64-unknown-freebsd" || echo "aarch64-unknown-freebsd")
+            pkg install -y xmake
+          run: |
+            . "$HOME/.cargo/env"
+            xmake f -p freebsd -a $TARGET_ARCH
+            xmake
+            xmake pack
+
+      - name: Upload FreeBSD artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: freebsd-${{ matrix.arch }}
+          path: build/xpack/**/*
+
+  # Build for Android (4 architectures)
+  android:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        arch: [arm64-v8a, armeabi-v7a, x86_64, x86]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK & NDK
+        uses: android-actions/setup-android@v3
+        # Note: This action sets ANDROID_HOME and ANDROID_NDK_HOME but does NOT add CMake to PATH.
+
+      - name: Install CMake from Android SDK and add to PATH
+        run: |
+          # Install a specific CMake version from the SDK
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "cmake;3.22.1"
+          # Add the CMake binary directory to the PATH for subsequent steps
+          echo "$ANDROID_HOME/cmake/3.22.1/bin" >> $GITHUB_PATH
+
+      - name: Set up Rust toolchain for Android
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          targets: ${{ matrix.arch == 'arm64-v8a' && 'aarch64-linux-android' || 
+                       matrix.arch == 'armeabi-v7a' && 'armv7-linux-androideabi' || 
+                       matrix.arch == 'x86_64' && 'x86_64-linux-android' || 
+                       'i686-linux-android' }}
+
+      - name: Set up xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Configure xmake global settings for Android
+        run: |
+          xmake g --ndk=$ANDROID_NDK_HOME --android_sdk=$ANDROID_HOME
+
+      - name: Build and pack for Android
+        run: |
+          # Map Android ABI names to xmake architecture names
+          XMAKE_ARCH=""
+          case "${{ matrix.arch }}" in
+            "arm64-v8a") XMAKE_ARCH="arm64" ;;
+            "armeabi-v7a") XMAKE_ARCH="armv7" ;;
+            "x86_64") XMAKE_ARCH="x86_64" ;;
+            "x86") XMAKE_ARCH="i386" ;;
+          esac
+          xmake f -p android -a $XMAKE_ARCH
+          xmake
+          xmake pack
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ matrix.arch }}
+          path: build/xpack/**/*
+
+  # Final job: Create a GitHub Release and upload all artifacts
+  release:
+    needs: [linux, windows, macos, freebsd, android]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
