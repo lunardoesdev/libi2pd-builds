@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-24.04]
-        arch: [x86_64, aarch64]
+        arch: [x86_64]
         include:
           - os: ubuntu-24.04
             arch: x86_64
@@ -97,10 +97,10 @@ jobs:
 
   # Build for macOS (Intel and ARM)
   macos:
-    runs-on: macos-13
+    runs-on: macos-26
     strategy:
       matrix:
-        arch: [x86_64, arm64]
+        arch: [arm64]
     steps:
       - uses: actions/checkout@v4
 
@@ -128,39 +128,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
-          path: build/xpack/**/*
-
-  # Build for FreeBSD (Intel and ARM via VM)
-  freebsd:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        arch: [x86_64, aarch64]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build on FreeBSD VM
-        uses: vmactions/freebsd-vm@v1
-        with:
-          usesh: true
-          mem: 4096
-          envs: 'TARGET_ARCH=${{ matrix.arch }}'
-          prepare: |
-            pkg install -y cmake git
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-            . "$HOME/.cargo/env"
-            rustup target add $([ "$TARGET_ARCH" = "x86_64" ] && echo "x86_64-unknown-freebsd" || echo "aarch64-unknown-freebsd")
-            pkg install -y xmake
-          run: |
-            . "$HOME/.cargo/env"
-            xmake f -p freebsd -a $TARGET_ARCH
-            xmake -vyD
-            xmake pack -vyD
-
-      - name: Upload FreeBSD artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: freebsd-${{ matrix.arch }}
           path: build/xpack/**/*
 
   # Build for Android (4 architectures)
