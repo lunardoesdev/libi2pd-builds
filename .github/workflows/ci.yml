@@ -195,7 +195,7 @@ jobs:
 
   # Final job: Create a GitHub Release and upload all artifacts
   release:
-    needs: [linux, windows, macos, freebsd, android]
+    needs: [linux, windows, macos, android]
     runs-on: ubuntu-22.04
     steps:
       - name: Download all build artifacts
