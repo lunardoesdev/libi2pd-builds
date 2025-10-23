@@ -18,7 +18,9 @@ target("feel-free-to-remove-me")
 
 includes("@builtin/xpack")
 
-xpack("i2pdwrap-" .. os.host() .. "-" .. os.arch())
+xpack("i2pdwrap")
     set_formats("targz")
     add_targets("feel-free-to-remove-me")
+    set_basename("i2pdwrap-" .. "$(plat)" .. "-" .. "$(arch)")
+
 
