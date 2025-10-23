@@ -9,6 +9,9 @@ endif()
 # for debugging
 #set(CMAKE_VERBOSE_MAKEFILE on)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED On)
+
 # paths
 # set(CMAKE_MODULE_PATH "${i2pd_SOURCE_DIR}/build/cmake_modules")
 set(CMAKE_SOURCE_DIR "${i2pd_SOURCE_DIR}")
