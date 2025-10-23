@@ -50,7 +50,6 @@ jobs:
 
       - name: Build and pack for Linux
         run: |
-          xmake f -p linux -a ${{ matrix.arch }} -vyD
           xmake -vyD
           xmake pack -vyD
 
