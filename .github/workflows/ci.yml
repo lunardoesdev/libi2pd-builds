@@ -104,10 +104,10 @@ jobs:
       matrix:
         include:
           - arch: x86_64
-            runner: macos-14
+            runner: macos-14-large
             rust-target: x86_64-apple-darwin
           - arch: arm64
-            runner: macos-14-arm64
+            runner: macos-14-xlarge
             rust-target: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v4
