@@ -12,15 +12,16 @@ permissions:
 jobs:
   # Build for Linux (Intel and ARM)
   linux:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        os: [ubuntu-24.04]
-        arch: [x86_64]
         include:
-          - os: ubuntu-24.04
-            arch: x86_64
-            runner-arch: x64
+          - arch: x86_64
+            runner: ubuntu-24.04
+            rust-target: x86_64-unknown-linux-gnu
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            rust-target: aarch64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
 
@@ -32,7 +33,7 @@ jobs:
       - name: Set up Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          targets: ${{ matrix.arch }}-unknown-linux-gnu
+          targets: ${{ matrix.rust-target }}
 
       - name: Set up xmake
         uses: xmake-io/github-action-setup-xmake@v1
@@ -41,6 +42,7 @@ jobs:
 
       - name: Build and pack for Linux
         run: |
+          xmake f -p linux -vyD
           xmake -vyD
           xmake pack -vyD
 
@@ -50,33 +52,47 @@ jobs:
           name: linux-${{ matrix.arch }}
           path: build/xpack/**/*
 
-  # Build for Windows (Intel and ARM)
+  # Build for Windows (Intel and ARM) using MSYS2
   windows:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        arch: [x86_64, arm64]
+        include:
+          - arch: x86_64
+            runner: windows-latest
+            rust-target: x86_64-pc-windows-gnu
+          - arch: arm64
+            runner: windows-11-arm
+            rust-target: aarch64-pc-windows-gnu
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install CMake via Chocolatey
-        run: |
-          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-        shell: pwsh
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          # Install required development tools
+          install: |
+            base-devel
+            cmake
+            mingw-w64-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-toolchain
+            git
 
       - name: Set up Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          targets: ${{ matrix.arch == 'x86_64' && 'x86_64-pc-windows-gnu' || 'aarch64-pc-windows-gnu' }}
+          targets: ${{ matrix.rust-target }}
 
       - name: Set up xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
 
-      - name: Build and pack for Windows
+      - name: Build and pack for Windows with MSYS2
+        shell: msys2 {0}
         run: |
-          xmake f -p windows -a ${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }} -vyD
+          # Configure and build using MSYS2 environment
+          xmake f -p mingw -vyD
           xmake -vyD
           xmake pack -vyD
 
@@ -88,10 +104,16 @@ jobs:
 
   # Build for macOS (Intel and ARM)
   macos:
-    runs-on: macos-13  # Lowered from macos-26 to macos-13 for better compatibility
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        arch: [x86_64, arm64]  # Added x86_64 for Intel Mac support
+        include:
+          - arch: x86_64
+            runner: macos-14
+            rust-target: x86_64-apple-darwin
+          - arch: arm64
+            runner: macos-14-arm64
+            rust-target: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v4
 
@@ -102,7 +124,7 @@ jobs:
       - name: Set up Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          targets: ${{ matrix.arch == 'x86_64' && 'x86_64-apple-darwin' || 'aarch64-apple-darwin' }}
+          targets: ${{ matrix.rust-target }}
 
       - name: Set up xmake
         uses: xmake-io/github-action-setup-xmake@v1
@@ -111,7 +133,7 @@ jobs:
 
       - name: Build and pack for macOS
         run: |
-          xmake f -p macosx -a ${{ matrix.arch }} -vyD
+          xmake f -p macosx -vyD
           xmake -vyD
           xmake pack -vyD
 
@@ -138,7 +160,6 @@ jobs:
 
       - name: Set up Android SDK & NDK
         uses: android-actions/setup-android@v3
-        # Note: This action sets ANDROID_HOME and ANDROID_NDK_HOME but does NOT add CMake to PATH.
 
       - name: Install CMake from Android SDK and add to PATH
         run: |
