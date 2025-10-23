@@ -215,7 +215,7 @@ jobs:
             "arm64-v8a") XMAKE_ARCH="arm64-v8a" ;;
             "armeabi-v7a") XMAKE_ARCH="armeabi-v7a" ;;
             "x86_64") XMAKE_ARCH="x86_64" ;;
-            "x86") XMAKE_ARCH="i686" ;;
+            "x86") XMAKE_ARCH="x86" ;;
           esac
           xmake f -p android -a $XMAKE_ARCH -vyD
           xmake -vyD
