@@ -33,7 +33,6 @@ jobs:
         with:
           platforms: arm64
 
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -98,10 +97,10 @@ jobs:
 
   # Build for macOS (Intel and ARM)
   macos:
-    runs-on: macos-26
+    runs-on: macos-13  # Lowered from macos-26 to macos-13 for better compatibility
     strategy:
       matrix:
-        arch: [arm64]
+        arch: [x86_64, arm64]  # Added x86_64 for Intel Mac support
     steps:
       - uses: actions/checkout@v4
 
